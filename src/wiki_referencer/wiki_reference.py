@@ -3,6 +3,9 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+from wikidata.client import Client
+import numpy as np
+
 
 
 def load_json(file_path):
@@ -19,6 +22,10 @@ class WikiReferencer:
         self.entity_article = load_json(f'{wiki_references_path}/entity_article.json')
         self.relations = load_json(f'{wiki_references_path}/relations.json')
         self.article_ids = list(self.article_id_text.keys())
+        self.client = Client()
+        self.genders = pd.read_pickle(f'{wiki_references_path}/genders_df.pkl').set_index('entity_id')
+        self.genders['gender'] = self.genders['gender_id'].map({'Q6581072': 'female', 'Q6581097': 'male'})
+        self.i = 0
 
     def get_entity_name(self, entity_id):
         return self.entity_id_name[str(entity_id)]
@@ -76,6 +83,28 @@ class WikiReferencer:
         train_labels = self.get_labels_articles(self.train_articles)
         test_labels = self.get_labels_articles(self.test_articles)
         return train_labels, test_labels
+
+    def _get_gender(self, entity_id):
+        try:
+            relation = self.client.get(entity_id).attributes['claims']['P21'][0]['mainsnak']['datavalue']['value']['id']
+            return relation
+        except:
+            print('could not find gender for: ', entity_id)
+            return None
+
+    def _get_gender_entities(self):
+        genders_df = pd.DataFrame()
+        entities = pd.Series(np.array(list(self.entity_id_name.keys())))
+        genders = entities.apply(self._get_gender)
+        genders_df['entity_id'] = entities
+        genders_df['gender_id'] = genders
+        return genders_df
+
+    def get_entity_gender(self, entity_id):
+        return self.genders.loc[entity_id]['gender']
+
+
+
 
 
 
