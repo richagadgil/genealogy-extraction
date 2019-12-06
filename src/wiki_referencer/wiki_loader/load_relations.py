@@ -16,7 +16,7 @@ class RelationExtractor:
     """
 
     def __init__(self, client):
-        self.client = client
+        self.client = client()
         self.relationship_ids = ['P26', 'P3373', 'P22', 'P25', 'P40']
         self.relationship_ids_set = set(self.relationship_ids)
         self.relationship_ids_dict = {relation_id: self.client.get(relation_id) for relation_id in self.relationship_ids}

@@ -20,6 +20,12 @@ class RelationModel:
 
     @abstractmethod
     def fit_train(self):
+        """
+
+        Returns
+        -------
+
+        """
         return self
 
     @abstractmethod
@@ -37,16 +43,21 @@ class RelationModel:
         pass
 
     def evaluate_labels(self, labels):
+        # TODO: Add more extensive evaluation metrics.
         true_relation_values = labels['relation']
-        predicted_relations = self.predict_relations(labels)
-        accuracy = np.mean(true_relation_values == predicted_relations)
+        self.predicted_relations = self.predict_relations(labels)
+        accuracy = np.mean(true_relation_values == self.predicted_relations)
         print('Test accuracy: ', accuracy)
 
-    def evaluate(self):
+    def evaluate_test(self):
         self.evaluate_labels(self.test_labels)
 
 
 class BaselineRelationModel(RelationModel):
+    """Randomly samples the relationship.
+    TODO: Change predict to highest probable class.
+
+    """
     def __init__(self):
         super().__init__()
 
@@ -56,11 +67,12 @@ class BaselineRelationModel(RelationModel):
         return self
 
     def predict(self, name_a, name_b, article):
-        return np.random.choice(list(self.proportion_relations.index), 1, p=list(self.proportion_relations.values))
+        return np.random.choice(list(self.proportion_relations.index), 1, p=list(self.proportion_relations.values))[0]
 
 
 if __name__ == '__main__':
     baseline_model = BaselineRelationModel()
     baseline_model.fit_train()
     baseline_model.evaluate()
+    baseline_model.predict('Berengar I of Italy')
 
