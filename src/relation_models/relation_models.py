@@ -77,8 +77,9 @@ class BaselineRelationModel(RelationModel):
 class EntityFeatureRelationModel(RelationModel):
     def __init__(self, num_train=10, num_test=5):
         super().__init__()
-        self.train_labels = self.train_labels.iloc[:num_train]
-        self.test_labels = self.train_labels.iloc[num_train:num_train + num_test]
+        # randomly sample number of relations to train and test on.
+        self.train_labels = self.train_labels.sample(num_train)
+        self.test_labels = self.train_labels.sample(num_test)
         self.i = 0
 
     def fit_article(self, article_id, entity_1, entity_2):
