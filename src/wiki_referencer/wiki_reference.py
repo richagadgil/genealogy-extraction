@@ -21,11 +21,15 @@ class WikiReferencer:
         self.entity_id_name = load_json(f'{wiki_references_path}/entity_id_name.json')
         self.entity_article = load_json(f'{wiki_references_path}/entity_article.json')
         self.relations = load_json(f'{wiki_references_path}/relations.json')
+        self.article_id_tags = load_json(f'{wiki_references_path}/article_ids_tagged.json')
         self.article_ids = list(self.article_id_text.keys())
         self.client = Client()
         self.genders = pd.read_pickle(f'{wiki_references_path}/genders_df.pkl').set_index('entity_id')
         self.genders['gender'] = self.genders['gender_id'].map({'Q6581072': 'female', 'Q6581097': 'male'})
         self.i = 0
+
+    def get_article_tags(self, article_id):
+        return self.article_id_tags[article_id]
 
     def get_entity_name(self, entity_id):
         return self.entity_id_name[str(entity_id)]
