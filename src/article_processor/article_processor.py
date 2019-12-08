@@ -15,6 +15,10 @@ class ArticleProcessor:
 
     def __init__(self, article, entity1, entity2):
         self.article = wiki_referencer.get_article_text(article)
+        self.article = wiki_referencer.get_article_tags(article)
+        # get all entities and variations for NER as part of feature extraction
+        self.entity1 = "@" + entity1 + "@"
+        self.entity2 = "@" + entity2 + "@"
 
         #get all entities and variations for NER as part of feature extraction
         self.entity1 = [wiki_referencer.get_entity_name(entity1)] + wiki_referencer.get_entity_aliases(entity1)
