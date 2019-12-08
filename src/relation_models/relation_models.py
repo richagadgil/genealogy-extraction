@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from src.article_processor.article_processor import ArticleProcessor
 import nltk
+from sklearn.model_selection import train_test_split
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = '/'.join(ROOT_DIR.split('/')[:-2])
@@ -45,6 +46,10 @@ class RelationModel:
     def predict(self, name_a, name_b, article):
         pass
 
+    @abstractmethod
+    def predict_test(self):
+        pass
+
     def evaluate_labels(self, labels):
         # TODO: Add more extensive evaluation metrics.
         true_relation_values = labels['relation']
@@ -52,8 +57,7 @@ class RelationModel:
         accuracy = np.mean(true_relation_values == self.predicted_relations)
         print('Test accuracy: ', accuracy)
 
-    def evaluate_test(self):
-        self.evaluate_labels(self.test_labels)
+
 
 
 
@@ -78,13 +82,26 @@ class EntityFeatureRelationModel(RelationModel):
     def __init__(self, num_train=10, num_test=5):
         super().__init__()
         # randomly sample number of relations to train and test on.
-        self.train_labels = self.train_labels.sample(num_train)
-        self.test_labels = self.train_labels.sample(num_test)
+        self.labels = self.train_labels.sample(num_train).dropna()
+        self.train_labels, self.test_labels = self.train_test_split(self.labels)
         self.i = 0
 
+    def train_test_split(self, labels):
+        X = labels[['entity_a', 'entity_b', 'article_id']].values
+        y = labels['relation'].values
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y, shuffle=True)
+        train_df = pd.DataFrame(X_train, columns=labels[['entity_a', 'entity_b', 'article_id']].columns)
+        train_df['relation'] = y_train
+
+        test_df = pd.DataFrame(X_test, columns=labels[['entity_a', 'entity_b', 'article_id']].columns)
+        test_df['relation'] = y_test
+
+        return train_df, test_df
+
+
+
+
     def fit_article(self, article_id, entity_1, entity_2):
-        self.i += 1
-        print(self.i)
         return ArticleProcessor(article_id, entity_1, entity_2).features
 
     def fit_train(self):
@@ -107,9 +124,15 @@ class EntityFeatureRelationModel(RelationModel):
         test_fts_list = test_ft.tolist()
         test_fts_dict = [(ft, relation) for relation, ft in
                                zip(self.test_labels['relation'].tolist(), test_fts_list)]
-        test_preds = nltk.classify.accuracy(self.classifier, test_fts_dict)
+        #test_preds = nltk.classify.accuracy(self.classifier, test_fts_dict)
         self.test_preds = self.classifier.classify_many(test_fts_list)
-        print(test_preds)
+
+    def evaluate_test(self):
+        self.predict_test()
+        true_labels = self.test_labels['relation']
+        accuracy = np.mean(self.test_preds == true_labels)
+        print('test accuracy: ', accuracy)
+        return accuracy
 
 
 if __name__ == '__main__':
