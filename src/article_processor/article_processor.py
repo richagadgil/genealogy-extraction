@@ -7,6 +7,9 @@ import timeit
 import sys
 import math
 from itertools import product
+from spacy.matcher import Matcher
+from spacy.tokens import Span
+from spacy import displacy
 
 class ArticleProcessor:
 
@@ -15,8 +18,19 @@ class ArticleProcessor:
 
         #get all entities and variations for NER as part of feature extraction
         self.entity1 = [wiki_referencer.get_entity_name(entity1)] + wiki_referencer.get_entity_aliases(entity1)
+        self.entity1_gender = wiki_referencer.get_entity_gender(entity1)
+
+        if(self.entity1_gender == "female"):
+            self.entity1 += ["her", "Her", "She", "she"]
+        elif(self.entity1_gender == "male"):
+            self.entity1 += ["his", "His", "Him", "him"]
+        print(self.entity1)
+
+
         self.entity2 = [wiki_referencer.get_entity_name(entity2)] + wiki_referencer.get_entity_aliases(entity2)
         self.all_entities = []
+
+        # NATE -- WORK ON NER
         for i in wiki_referencer.get_article_entities(article):
             self.all_entities = self.all_entities + [wiki_referencer.get_entity_name(i)] + wiki_referencer.get_entity_aliases(i)
 
@@ -24,16 +38,9 @@ class ArticleProcessor:
         self.entity2 = self.first_entity_names(self.entity2)
         self.all_entities = self.first_entity_names(self.all_entities)
 
-
-        #TO-DO: append Gender Pronouns
-
         self.features = {}
 
-
         self.text = wiki_referencer.get_article_text(article)
-
-        #self.doc = nlp(self.text)
-        #start = timeit.timeit()
         self.occurences()
 
 
@@ -62,16 +69,19 @@ class ArticleProcessor:
         self.features["shortest_occurrence_words_in_between"] = 0
         self.features["shortest_occurrence_entities_in_between"] = 0
 
+        #triple-relationship extraction
+        self.features["spouse_relationship"] = True
+        self.features["child_relationship"] = True
+        self.features["sibling_relationship"] = True
+        self.features["mother_relationship"] = True
+        self.features["father_relationship"] = True
+
 
         first_paragraph_with_both_entities = None
         shortest_distance_between_entities = sys.maxsize
 
         #dictionary for triple extraction features
-        relation = {}
-        relation["mother"] = ["mother"]
-        relation["child"] = ["child", "daughter", "son"]
-        relation["father"] = ["father"]
-        relation["spouse"] = ["married", "spouse", "wife", "husband"]
+        # for married, look for instance of married between two entities
 
 
         for p in range(0, len(paragraphs)):
@@ -85,15 +95,58 @@ class ArticleProcessor:
 
             for s in sentences:
                 tokenized = [w.text for w in s]
-                sentence_entities = [(i, tokenized.index(i)) for i in self.all_entities if i in tokenized]
+                #print(s)
+                sentence_entities = list(set([(i, tokenized.index(i)) for i in self.all_entities if i in tokenized]))
                 found_entities = [(i[0], place + i[1]) for i in sentence_entities]
+
 
                 e1_found = [i[1] for i in found_entities if i[0] in self.entity1]
                 e2_found = [i[1] for i in found_entities if i[0] in self.entity2]
 
                 #------------------
                 #TRIPLE EXTRACTION
-                #TBD
+
+                #nsubj = [w for w in s if w.dep_ == 'nsubj']
+                #root = [w for w in s if w.dep_ == 'ROOT']
+                #entity_nsubj = [w.text for w in nsubj if w.text in self.all_entities]
+
+                # MARRIAGE-DETECTION
+                #mdict = ["married", "remarried", "marry"]
+                #married_root = [w.text for w in root if w.text in mdict]
+
+                #if(len(entity_nsubj) > 0 and len(married_root) > 0):
+                #    index = tokenized.index(married_root[0])
+                #    if(len([i for i in sentence_entities if i[1] > index and i[0] in self.entity2]) > 0):
+                #        self.features["spouse"] = True
+                #        print(s, "\n")
+
+
+
+                # POSESSIVE-DETECTION
+                matcher = Matcher(nlp.vocab)
+                pattern1 = [{'DEP': 'poss'},  # adjectival modifier
+                           {'DEP': 'amod', 'OP': "?"},
+                           {'DEP': 'pobj'},
+                           {'DEP': 'punct', 'OP': "?"},
+                           {'POS': 'PROPN'}]
+                pattern2 = [{'DEP': 'poss'},  # adjectival modifier
+                           {'DEP': 'amod', 'OP': "?"},
+                           {'DEP': 'dobj'},
+                           {'DEP': 'punct', 'OP': "?"},
+                           {'POS': 'PROPN'}]
+                pattern3 = [{'DEP': 'dobj'},  # adjectival modifier
+                            {'DEP': 'punct', 'OP': "?"},
+                            {'DEP': 'poss'},
+                            {'DEP': 'case', 'OP': "?"},
+                            {'DEP': 'appos'}]
+
+                #patterns = [pattern1, pattern2, pattern3]
+                #matcher.add("matching", None, pattern1, pattern2, pattern3)
+                #matches = matcher(s.as_doc())
+                #hi= []
+                #for match_id, start, end in matches:
+                #    print(s, "\n", s[start:end], "\n\n")
+
 
 
                 #------------------
@@ -116,7 +169,6 @@ class ArticleProcessor:
                         self.features["shortest_occurrence_entities_in_same_sentence"] = True
 
                    # print(e1_occurences, e2_occurences, shortest_e2_index, shortest_e1_index)
-
 
                     if(first_paragraph_with_both_entities == None):
                         if(first_e1_index != None and first_e2_index != None): #MATCH FOUND
@@ -147,14 +199,17 @@ class ArticleProcessor:
                       #  print(paragraphs[p])
                 place += len(tokenized)
 
+        #print( self.features)
 
 
 
 if __name__ == '__main__':
+    p = ArticleProcessor('148301', 'Q77335', 'Q75392161')
     p = ArticleProcessor('1467835', 'Q274606', 'Q3769073')
 
 
-
+#Q76343	Q3434236	P40	148301
+#Q274606 Q3769073 1467835
 
 
 
