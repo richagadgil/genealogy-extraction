@@ -11,53 +11,39 @@ from spacy.matcher import Matcher
 from spacy.tokens import Span
 from spacy import displacy
 
-
 class ArticleProcessor:
-    def __init__(self, article, entity1, entity2):
-        self.article = wiki_referencer.get_article_text(article)
-        self.article = wiki_referencer.get_article_tags(article)
-        # get all entities and variations for NER as part of feature extraction
-        self.entity1 = "@" + entity1 + "@"
-        self.entity2 = "@" + entity2 + "@"
 
+    def __init__(self, article, entity1, entity2):
+        self.article = wiki_referencer.get_article_tags(article)
         #get all entities and variations for NER as part of feature extraction
-        self.entity1 = [wiki_referencer.get_entity_name(entity1)] + wiki_referencer.get_entity_aliases(entity1)
+        self.entity1 = "@"+entity1+"@"
+        self.entity2 = "@"+entity2+"@"
+
+        self.all_entities = wiki_referencer.get_article_entities(article)
+        self.all_entities = ["@"+i+"@" for i in self.all_entities]
         self.entity1_gender = wiki_referencer.get_entity_gender(entity1)
 
-        if(self.entity1_gender == "female"):
-            self.entity1 += ["her", "Her", "She", "she"]
-        elif(self.entity1_gender == "male"):
-            self.entity1 += ["his", "His", "Him", "him"]
-        print(self.entity1)
+        if (self.entity1_gender == "female"):
+            self.gender = ["her", "Her", "She", "she"]
+        elif (self.entity1_gender == "male"):
+            self.gender = ["his", "His", "Him", "him"]
 
-
-        self.entity2 = [wiki_referencer.get_entity_name(entity2)] + wiki_referencer.get_entity_aliases(entity2)
-        self.all_entities = []
-
-        # NATE -- WORK ON NER
-        for i in wiki_referencer.get_article_entities(article):
-            self.all_entities = self.all_entities + [wiki_referencer.get_entity_name(i)] + wiki_referencer.get_entity_aliases(i)
-
-        self.entity1 = self.first_entity_names(self.entity1)
-        self.entity2 = self.first_entity_names(self.entity2)
-        self.all_entities = self.first_entity_names(self.all_entities)
+        #TO-DO: append Gender Pronouns
 
         self.features = {}
 
+
         self.text = wiki_referencer.get_article_text(article)
+
+        #self.doc = nlp(self.text)
+        #start = timeit.timeit()
         self.occurences()
 
 
-    def first_entity_names(self, entities):
-        new_entities = entities.copy()
-        for i in entities:
-            if(len(i.split(' ')) > 0 and i.split(' ')[0] not in new_entities):
-                new_entities.append(i.split(' ')[0])
-        return new_entities
 
     def occurences(self):
 
-        paragraphs = self.text.split("\n") #TO-DO: improve paragraph tokenizer?
+        paragraphs = self.article.split("\n") #TO-DO: improve paragraph tokenizer?
         paragraphs = [p for p in paragraphs if len(p) > 0]
 
         #defaults for classifier features
@@ -80,6 +66,12 @@ class ArticleProcessor:
         self.features["mother_relationship"] = True
         self.features["father_relationship"] = True
 
+        self.relationships = {}
+        self.relationships["child"] = ["son", "daughter"]
+        self.relationships["mother"] = ["mother"]
+        self.relationships["father"] = ["father"]
+        self.relationships["sibling"] = ["brother", "sister", "sibling"]
+
 
         first_paragraph_with_both_entities = None
         shortest_distance_between_entities = sys.maxsize
@@ -100,12 +92,12 @@ class ArticleProcessor:
             for s in sentences:
                 tokenized = [w.text for w in s]
                 #print(s)
-                sentence_entities = list(set([(i, tokenized.index(i)) for i in self.all_entities if i in tokenized]))
+                sentence_entities = list(set([(i, tokenized.index(i)) for i in self.all_entities if i in tokenized or i[0] in self.gender]))
                 found_entities = [(i[0], place + i[1]) for i in sentence_entities]
 
 
-                e1_found = [i[1] for i in found_entities if i[0] in self.entity1]
-                e2_found = [i[1] for i in found_entities if i[0] in self.entity2]
+                e1_found = [i[1] for i in found_entities if i[0] in self.entity1 or i[0] in self.gender]
+                e2_found = [i[1] for i in found_entities if i[0] in self.entity2 or i[0] in self.gender]
 
                 #------------------
                 #TRIPLE EXTRACTION
@@ -127,29 +119,41 @@ class ArticleProcessor:
 
 
                 # POSESSIVE-DETECTION
-                matcher = Matcher(nlp.vocab)
+
                 pattern1 = [{'DEP': 'poss'},  # adjectival modifier
                            {'DEP': 'amod', 'OP': "?"},
                            {'DEP': 'pobj'},
                            {'DEP': 'punct', 'OP': "?"},
-                           {'POS': 'PROPN'}]
+                           {'POS': 'PROPN'},
+                            {'DEP': 'appos', 'OP': "?"}]
                 pattern2 = [{'DEP': 'poss'},  # adjectival modifier
                            {'DEP': 'amod', 'OP': "?"},
                            {'DEP': 'dobj'},
                            {'DEP': 'punct', 'OP': "?"},
-                           {'POS': 'PROPN'}]
+                           {'POS': 'PROPN'},
+                            {'DEP': 'appos', 'OP': "?"}]
                 pattern3 = [{'DEP': 'dobj'},  # adjectival modifier
                             {'DEP': 'punct', 'OP': "?"},
                             {'DEP': 'poss'},
                             {'DEP': 'case', 'OP': "?"},
                             {'DEP': 'appos'}]
 
-                #patterns = [pattern1, pattern2, pattern3]
-                #matcher.add("matching", None, pattern1, pattern2, pattern3)
-                #matches = matcher(s.as_doc())
-                #hi= []
-                #for match_id, start, end in matches:
-                #    print(s, "\n", s[start:end], "\n\n")
+                patterns = [pattern1, pattern2, pattern3]
+                matcher = Matcher(nlp.vocab)
+                matcher.add("matching", None, pattern1, pattern2, pattern3)
+                matches = matcher(s.as_doc())
+                for match_id, start, end in matches:
+                    # print([(a.text, a.dep_, a.pos_) for a in s])
+                    found = []
+                    entity2_found = None
+                    for i in s[start:end]:
+                        # print(s[start:end])
+                        found = found + [k for k, v in self.relationships.items() if i.text in v]
+                        if (i.text in self.entity2):
+                            entity2_found = True
+                    if (len(found) > 0 and entity2_found == True):
+                        self.features[found[0]] = True
+                        print(found[0], s[start:end])
 
 
 
@@ -205,6 +209,8 @@ class ArticleProcessor:
 
         #print( self.features)
 
+    def triple_occurence(self, text):
+        pass
 
 
 if __name__ == '__main__':
