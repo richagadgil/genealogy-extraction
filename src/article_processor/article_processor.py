@@ -11,8 +11,8 @@ from spacy.matcher import Matcher
 from spacy.tokens import Span
 from spacy import displacy
 
-class ArticleProcessor:
 
+class ArticleProcessor:
     def __init__(self, article, entity1, entity2):
         self.article = wiki_referencer.get_article_text(article)
         self.article = wiki_referencer.get_article_tags(article)
