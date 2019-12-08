@@ -47,30 +47,25 @@ class ArticleProcessor:
         paragraphs = [p for p in paragraphs if len(p) > 0]
 
         #defaults for classifier features
-        self.features["first_occurrence_entities_in_same_sentence"] = False
-        self.features["first_occurrence_e2_possessive"] = False
-        self.features["first_occurrence_e1_possessive"] = False
-        self.features["first_occurrence_words_in_between"] = 0
-        self.features["first_occurrence_entities_in_between"] = 0
+       # self.features["first_occurrence_entities_in_same_sentence"] = False
+       # self.features["first_occurrence_e2_possessive"] = False
+       # self.features["first_occurrence_e1_possessive"] = False
+       # self.features["first_occurrence_words_in_between"] = 0
+       # self.features["first_occurrence_entities_in_between"] = 0
 
-        self.features["shortest_occurrence_entities_in_same_sentence"] = False
-        self.features["shortest_occurrence_e2_possessive"] = False
-        self.features["shortest_occurrence_e1_possessive"] = False
-        self.features["shortest_occurrence_words_in_between"] = 0
-        self.features["shortest_occurrence_entities_in_between"] = 0
+       # self.features["shortest_occurrence_entities_in_same_sentence"] = False
+       # self.features["shortest_occurrence_e2_possessive"] = False
+       # self.features["shortest_occurrence_e1_possessive"] = False
+       # self.features["shortest_occurrence_words_in_between"] = 0
+       # self.features["shortest_occurrence_entities_in_between"] = 0
 
         #triple-relationship extraction
-        self.features["spouse_relationship"] = True
-        self.features["child_relationship"] = True
-        self.features["sibling_relationship"] = True
-        self.features["mother_relationship"] = True
-        self.features["father_relationship"] = True
-
         self.relationships = {}
         self.relationships["child"] = ["son", "daughter"]
         self.relationships["mother"] = ["mother"]
         self.relationships["father"] = ["father"]
         self.relationships["sibling"] = ["brother", "sister", "sibling"]
+        self.relationships["spouse"] = ["husband", "wife"]
 
 
         first_paragraph_with_both_entities = None
@@ -102,19 +97,21 @@ class ArticleProcessor:
                 #------------------
                 #TRIPLE EXTRACTION
 
-                #nsubj = [w for w in s if w.dep_ == 'nsubj']
-                #root = [w for w in s if w.dep_ == 'ROOT']
+                #mdict = ["married", "remarried", "marry"]
+                #marriage_root = [(w.text, w.i) for w in s if w.dep_ == 'ROOT' and w.text in mdict]
                 #entity_nsubj = [w.text for w in nsubj if w.text in self.all_entities]
 
                 # MARRIAGE-DETECTION
-                #mdict = ["married", "remarried", "marry"]
-                #married_root = [w.text for w in root if w.text in mdict]
+                #married_root = [(w.text for w in root if w.text in mdict]
+                #nsubj = [w for w in s if w.dep_ == 'nsubj']
 
-                #if(len(entity_nsubj) > 0 and len(married_root) > 0):
-                #    index = tokenized.index(married_root[0])
-                #    if(len([i for i in sentence_entities if i[1] > index and i[0] in self.entity2]) > 0):
-                #        self.features["spouse"] = True
-                #        print(s, "\n")
+                #if(len(marriage_root) > 0):
+                #    print(marriage_root)
+                    #index = tokenized.index(married_root[0])
+                    #print(nsubj, s)
+                    #if(len([i for i in sentence_entities if i[1] > index and i[0] in self.entity2]) > 0):
+                    #    self.features["spouse"] = True
+                    #    print(s, "\n")
 
 
 
