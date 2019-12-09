@@ -70,14 +70,15 @@ class ArticleProcessor:
                     p_ents[i.group()] = [i.span()[0]]
 
 
+
             p_ents["gender"] = []
-            if (self.entity1_gender == "male"):
-                regex = re.compile(' (his|him|himself|he)[ |\,|\.]', re.IGNORECASE)
-            elif (self.entity1_gender == "female"):
-                regex = re.compile(' (hers|her|herself|she)[ |\,|\.]', re.IGNORECASE)
-            matches = regex.finditer(text.text)
-            for i in matches:
-                p_ents["gender"].append(i.span()[0])
+            #if (self.entity1_gender == "male"):
+            #    regex = re.compile(' (his|him|himself|he)[ |\,|\.]', re.IGNORECASE)
+            #elif (self.entity1_gender == "female"):
+            #    regex = re.compile(' (hers|her|herself|she)[ |\,|\.]', re.IGNORECASE)
+            #matches = regex.finditer(text.text)
+            #for i in matches:
+            #    p_ents["gender"].append(i.span()[0])
 
 
             if(self.entity1 in p_ents.keys()):
@@ -89,6 +90,7 @@ class ArticleProcessor:
 
 
                 if(first_paragraph_with_both_entities == None):
+                    self.features["first_occurence_entity_ratio"] = len(p_ents[self.entity1]) / len(p_ents[self.entity2])
                     first_paragraph_with_both_entities = True
                     e1_first = min(p_ents[self.entity1]) #+ p_ents["gender"])
                     e2_first = min(p_ents[self.entity2])
@@ -142,6 +144,7 @@ class ArticleProcessor:
 
                 if(len(text_in_between) < shortest_distance_between_entities):
                     shortest_distance_between_entities = len(text_in_between)
+                    self.features["shortest_occurence_entity_ratio"] = len(p_ents[self.entity1]) / len(p_ents[self.entity2])
                     self.features['shortest_occurence_words_in_between'] = len(text_in_between)
                     if (len(list(text_in_between.sents)) == 1):
                         self.features['shortest_occurence_same_sentence'] = True
