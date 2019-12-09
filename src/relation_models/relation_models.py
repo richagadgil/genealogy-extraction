@@ -82,7 +82,7 @@ class EntityFeatureRelationModel(RelationModel):
     def __init__(self, num_train=100, num_test=20):
         super().__init__()
         # randomly sample number of relations to train and test on.
-        self.labels = self.train_labels.sample(num_train).dropna()
+        self.labels = self.train_labels.sample(num_train, random_state=13).dropna()
         self.train_labels, self.test_labels = self.train_test_split(self.labels)
         self.i = 0
 
