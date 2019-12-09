@@ -1,0 +1,13 @@
+0 HEAD
+1 GEDC
+1 CHAR ASCII
+0 @I0@ INDI
+1 NAME Heinrich XXII, Prince Reuss of Greiz
+1 FAMC @F0@
+0 @I1@ INDI
+1 NAME Princess Henriette of Schönaich-Carolath
+1 FAMS @F0@
+0 @F0@ FAM
+1 CHIL@I0@
+1 WIFE@I1@
+0 TRLR

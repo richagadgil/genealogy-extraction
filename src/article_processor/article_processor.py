@@ -12,18 +12,28 @@ from spacy.tokens import Span
 from spacy import displacy
 import re
 
+
+
+def preprocess_article_id(article_id, entity1_id, entity2_id):
+    article = wiki_referencer.get_article_tags(article_id)
+    entity1 = "@" + entity1_id+ "@"
+    entity2 = "@"+entity2_id+"@"
+    return ArticleProcessor(article, entity1, entity2)
+
+
 class ArticleProcessor:
+    def __init__(self, article, entity1, entity2, load_wiki=True):
+        print("processing_relationship...")
+        if load_wiki:
+            self.article = wiki_referencer.get_article_tags(article)
+            #get all entities and variations for NER as part of feature extraction
 
-    def __init__(self, article, entity1, entity2):
-        print("start8")
-        self.article = wiki_referencer.get_article_tags(article)
-        #get all entities and variations for NER as part of feature extraction
-        self.entity1 = "@"+entity1+"@"
-        self.entity2 = "@"+entity2+"@"
+        else:
+            self.article = article
 
-        self.all_entities = wiki_referencer.get_article_entities(article)
-        self.all_entities = ["@"+i+"@" for i in self.all_entities]
-        self.entity1_gender = wiki_referencer.get_entity_gender(entity1)
+        self.entity1 = "@"+str(entity1)+"@"
+        self.entity2 = "@" + str(entity2) + "@"
+
         self.features = {}
 
 
