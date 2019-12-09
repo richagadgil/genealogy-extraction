@@ -6,6 +6,9 @@ import pandas as pd
 from src.article_processor.article_processor import ArticleProcessor
 import nltk
 from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction import DictVectorizer
+from sklearn import svm
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = '/'.join(ROOT_DIR.split('/')[:-2])
@@ -136,13 +139,53 @@ class EntityFeatureRelationModel(RelationModel):
         return accuracy
 
 
+class ScikitEntityFeatureRelationModel(RelationModel):
+    def __init__(self, num_train=100, num_test=20):
+        super().__init__()
+        # randomly sample number of relations to train and test on.
+        self.labels = self.train_labels.sample(num_train, random_state=13).dropna()
+        self.train_labels, self.test_labels = self.train_test_split(self.labels)
+        self.i = 0
+        self.vec1 = DictVectorizer(sparse=False)
+
+    def train_test_split(self, labels):
+        X = labels[['entity_a', 'entity_b', 'article_id']].values
+        y = labels['relation'].values
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y,
+                                                            shuffle=True, random_state=42)
+        train_df = pd.DataFrame(X_train, columns=labels[['entity_a', 'entity_b', 'article_id']].columns)
+        train_df['relation'] = y_train
+
+        test_df = pd.DataFrame(X_test, columns=labels[['entity_a', 'entity_b', 'article_id']].columns)
+        test_df['relation'] = y_test
+
+        print(train_df, test_df)
+        return train_df, test_df
+
+
+    def fit_article(self, article_id, entity_1, entity_2):
+        return ArticleProcessor(article_id, entity_1, entity_2).features
+
+    def fit_train(self):
+        self.train_fts = self.train_labels.apply(lambda x: self.fit_article(x.article_id, x.entity_a, x.entity_b), axis=1)
+        X_train = self.vec1.fit_transform(self.train_fts)
+        self.classifier = svm.SVC()
+        self.classifier.fit(X_train, self.train_labels['relation'])
+        self.test_fts = self.test_labels.apply(lambda x: self.fit_article(x.article_id, x.entity_a, x.entity_b), axis=1)
+        X_test = self.vec1.transform(self.test_fts)
+        test_preds = self.classifier.predict(X_test)
+        accuracy = np.mean(test_preds == self.test_labels['relation'])
+        print('test accuracy: ', accuracy)
+        return accuracy
+
+
 if __name__ == '__main__':
     # baseline_model = BaselineRelationModel()
     # baseline_model.fit_train()
     # baseline_model.evaluate_test()
     # baseline_model.predict('Berengar I of Italy')
 
-    entity_fts = EntityFeatureRelationModel()
+    entity_fts = ScikitEntityFeatureRelationModel(num_train=50)
     entity_fts.fit_train()
     entity_fts.predict_test()
 
