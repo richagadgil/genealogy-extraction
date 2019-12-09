@@ -11,8 +11,8 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = '/'.join(ROOT_DIR.split('/')[:-2])
 
 wiki_referencer = WikiReferencer()
-train_labels = pd.read_pickle(PROJECT_ROOT + '/data/train_labels.pkl')
-test_labels = pd.read_pickle(PROJECT_ROOT + '/data/test_labels.pkl')
+train_labels = pd.read_pickle(PROJECT_ROOT + '/data/subset_train.pkl')
+test_labels = pd.read_pickle(PROJECT_ROOT + '/data/subset_train.pkl')
 
 
 class RelationModel:
@@ -79,7 +79,7 @@ class BaselineRelationModel(RelationModel):
 
 
 class EntityFeatureRelationModel(RelationModel):
-    def __init__(self, num_train=10, num_test=5):
+    def __init__(self, num_train=100, num_test=20):
         super().__init__()
         # randomly sample number of relations to train and test on.
         self.labels = self.train_labels.sample(num_train).dropna()
@@ -89,7 +89,8 @@ class EntityFeatureRelationModel(RelationModel):
     def train_test_split(self, labels):
         X = labels[['entity_a', 'entity_b', 'article_id']].values
         y = labels['relation'].values
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y, shuffle=True)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, stratify=y,
+                                                            shuffle=True, random_state=42)
         train_df = pd.DataFrame(X_train, columns=labels[['entity_a', 'entity_b', 'article_id']].columns)
         train_df['relation'] = y_train
 
@@ -97,9 +98,6 @@ class EntityFeatureRelationModel(RelationModel):
         test_df['relation'] = y_test
 
         return train_df, test_df
-
-
-
 
     def fit_article(self, article_id, entity_1, entity_2):
         return ArticleProcessor(article_id, entity_1, entity_2).features
@@ -113,21 +111,24 @@ class EntityFeatureRelationModel(RelationModel):
 
     def predict_relation_from_ids(self, entity_a_id, entity_b_id, article_id):
         predict_fts = self.fit_article(article_id, entity_a_id, entity_b_id)
-        #probs = self.classifier.prob_classify(predict_fts)
+        probs = self.classifier.prob_classify(predict_fts)
         classif = self.classifier.classify(predict_fts)
         # for label in probs.samples():
         #     print("%s: %f" % (label, probs.prob(label)))
-        return classif
+        return probs
 
     def predict_test(self):
         test_ft = self.test_labels.apply(lambda x: self.fit_article(x.article_id, x.entity_a, x.entity_b), axis=1)
-        test_fts_list = test_ft.tolist()
+        self.test_fts_list = test_ft.tolist()
         test_fts_dict = [(ft, relation) for relation, ft in
-                               zip(self.test_labels['relation'].tolist(), test_fts_list)]
-        #test_preds = nltk.classify.accuracy(self.classifier, test_fts_dict)
-        self.test_preds = self.classifier.classify_many(test_fts_list)
+                               zip(self.test_labels['relation'].tolist(), self.test_fts_list) if len(list(ft)) > 0]
+
+        test_preds_acc = nltk.classify.accuracy(self.classifier, test_fts_dict)
+        print(test_preds_acc)
+        self.test_preds = self.classifier.classify_many(self.test_fts_list)
 
     def evaluate_test(self):
+
         self.predict_test()
         true_labels = self.test_labels['relation']
         accuracy = np.mean(self.test_preds == true_labels)
