@@ -15,7 +15,7 @@ import re
 class ArticleProcessor:
 
     def __init__(self, article, entity1, entity2):
-        print("start5")
+        print("start8")
         self.article = wiki_referencer.get_article_tags(article)
         #get all entities and variations for NER as part of feature extraction
         self.entity1 = "@"+entity1+"@"
@@ -90,7 +90,7 @@ class ArticleProcessor:
 
                 if(first_paragraph_with_both_entities == None):
                     first_paragraph_with_both_entities = True
-                    e1_first = min(p_ents[self.entity1] + p_ents["gender"])
+                    e1_first = min(p_ents[self.entity1]) #+ p_ents["gender"])
                     e2_first = min(p_ents[self.entity2])
 
                     if (e1_first < e2_first):
@@ -130,7 +130,7 @@ class ArticleProcessor:
 
                 min_difference = sys.maxsize
 
-                for x in sorted(p_ents[self.entity1] + p_ents["gender"]):
+                for x in sorted(p_ents[self.entity1]): #+ p_ents["gender"]):
                     for y in sorted(p_ents[self.entity2]):
                         if(x < y and y - x < min_difference):
                             text_in_between = nlp(text.text[x:y])
@@ -205,7 +205,7 @@ class ArticleProcessor:
                             entity2_found = True
                     if (len(found) > 0 and entity2_found == True):
                         features = "paragraph_"+found[0]
-                        #self.features[features] = True
+                        self.features[features] = True
 
 
 
