@@ -295,14 +295,6 @@ class ArticleProcessor:
                       #  print(paragraphs[p])
                 #place += len(tokenized)
 
-        if(e1_eventual == False or e2_eventual == False):
-            print("ERROR!!!!")
-            #print(p_ents)
-
-    def triple_occurence(self, text):
-        pass
-
-
 if __name__ == '__main__':
     p = ArticleProcessor('148301', 'Q77335', 'Q75392161')
     print("\n")

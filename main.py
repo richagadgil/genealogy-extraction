@@ -42,19 +42,20 @@ def expand_person_entities(doc):
 # nlp.remove_pipe('expand_person_entities')
 nlp.add_pipe(expand_person_entities, after='ner')
 
+
 def replace_text(text):
     doc = nlp(text)
     person_names = [ent.text for ent in doc.ents if ent.label_=='PERSON']
     new_doc = text
     i = 0
 
-    for name in person_names:
-        new_doc = re.sub(name, f'@{name}@', new_doc)
+    for name in list(set(person_names)):
         first_name = name.split(' ')[0]
         if "." not in first_name:
             new_doc = re.sub(name, f'@{name}@', new_doc)
         i += 1
-    return new_doc, person_names
+    return new_doc, list(set(person_names))
+
 
 def predict_relations_text(text):
     tagged_article, person_names = replace_text(text)
@@ -67,12 +68,14 @@ def predict_relations_text(text):
     entities_probs = [(entities_combinations[i], probs[i]) for i in range(len(entities_combinations))]
     return entities_probs
 
+
 def predict_relations_article(article_id, wiki_referencer, model):
     article_entities = wiki_referencer.get_article_entities(article_id)
     entities_combinations = list(combinations(article_entities, 2))
     entities_probs = [model.predict_relation_from_ids(article_id=article_id, entity_a_id=e_a, entity_b_id=e_b) for e_a, e_b in entities_combinations]
     entities_probs = [(entities_combinations[i], entities_probs[i]) for i in range(len(entities_combinations))]
     return entities_probs
+
 
 class ArticleTree:
     def __init__(self, article_id, wiki_referencer, entities_probs, article_entities=None):
@@ -212,7 +215,7 @@ class ArticleTree:
                                 self.wiki_referencer.get_entity_name(ents[1]), r_map[r]) for ents, r in relations]
             return relations_names
         except:
-            return [(r[0][0].replace('@', ''), r[0][1].replace('@', '')) for r in relations]
+            return [(r[0][0].replace('@', ''), r[0][1].replace('@', ''), r_map[r[1]]) for r in relations]
 
 def get_family_trees(article_id, wiki_referencer, model):
     article_entity_probs = predict_relations_article(article_id, wiki_referencer, model)
@@ -291,10 +294,12 @@ def main():
 
             #print('article_ents: ', article_entities)
             article_tree =  ArticleTree(article_id=None,
-                     wiki_referencer=wiki_referencer,
-                     entities_probs=article_entity_probs,
+                      wiki_referencer=wiki_referencer,
+                      entities_probs=article_entity_probs,
                       article_entities=article_entities)
+
             relations = article_tree.get_relations_name(threshold_probability=0.52)
+            print('relations: ', relations)
             plot_trees(relations)
             gedcom = convert_to_gedcom(relations)
             print()
@@ -306,7 +311,7 @@ def main():
 
         elif "--generate" in current_input:
             random_article_tree = random_article()
-            relations = random_article_tree.get_relations_name(threshold_probability=0.52)
+            relations = random_article_tree.get_relations_name(threshold_probability=0.4)
             plot_trees(relations)
 
             gedcom = convert_to_gedcom(relations)
