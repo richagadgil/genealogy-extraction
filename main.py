@@ -47,23 +47,17 @@ def replace_text(text):
     doc = nlp(text)
     person_names = [ent.text for ent in doc.ents if ent.label_=='PERSON']
     new_doc = text
-    i = 0
 
     for name in list(set(person_names)):
-        first_name = name.split(' ')[0]
-        if "." not in first_name:
-            new_doc = re.sub(name, f'@{name}@', new_doc)
-        i += 1
+        name = re.sub(r'[^0-9a-zA-Z ]+', '', name)
+        new_doc = re.sub(str(name), f'@{name}@', new_doc)
+
     return new_doc, list(set(person_names))
 
 
 def predict_relations_text(text):
     tagged_article, person_names = replace_text(text)
     entities_combinations = list(combinations(person_names, 2))
-    print('entity combos: ',entities_combinations)
-    print()
-    print('tagged_article: ', tagged_article)
-    #fts = [(comb, ArticleProcessor(article=tagged_article, entity1=comb[0], entity2= comb[1], load_wiki=False)) for comb in entities_combinations]
     probs = [model.predict_relation_from_ids(article_id=tagged_article, entity_a_id=ft[0], entity_b_id=ft[1], wiki_fit=False) for ft in entities_combinations]
     entities_probs = [(entities_combinations[i], probs[i]) for i in range(len(entities_combinations))]
     return entities_probs
@@ -217,15 +211,18 @@ class ArticleTree:
         except:
             return [(r[0][0].replace('@', ''), r[0][1].replace('@', ''), r_map[r[1]]) for r in relations]
 
+
 def get_family_trees(article_id, wiki_referencer, model):
     article_entity_probs = predict_relations_article(article_id, wiki_referencer, model)
     article_tree = ArticleTree(article_id, wiki_referencer, article_entity_probs)
     return article_tree
 
+
 def random_article_id():
     test_articles = model.test_labels['article_id'].tolist()
     random_article_id = random.sample(test_articles, 1)[0]
     return random_article_id
+
 
 def random_article():
     test_articles = model.test_labels['article_id'].tolist()

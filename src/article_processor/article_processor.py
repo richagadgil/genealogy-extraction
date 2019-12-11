@@ -295,6 +295,10 @@ class ArticleProcessor:
                       #  print(paragraphs[p])
                 #place += len(tokenized)
 
+    def triple_occurence(self, text):
+        pass
+
+
 if __name__ == '__main__':
     p = ArticleProcessor('148301', 'Q77335', 'Q75392161')
     print("\n")
