@@ -47,12 +47,13 @@ def replace_text(text):
     doc = nlp(text)
     person_names = [ent.text for ent in doc.ents if ent.label_=='PERSON']
     new_doc = text
-
+    clean_names = []
     for name in list(set(person_names)):
-        name = re.sub(r'[^0-9a-zA-Z ]+', '', name)
+        name = re.sub(r'[^a-zA-Z ]+', '', name)
+        clean_names.append(name)
         new_doc = re.sub(str(name), f'@{name}@', new_doc)
 
-    return new_doc, list(set(person_names))
+    return new_doc, clean_names
 
 
 def predict_relations_text(text):
@@ -288,6 +289,7 @@ def main():
 
             article_entity_probs = predict_relations_text(n)
             article_entities = list(set([x[0][0] for x in article_entity_probs] + [x[0][1] for x in article_entity_probs]))
+            print(article_entities)
 
             #print('article_ents: ', article_entities)
             article_tree =  ArticleTree(article_id=None,
@@ -295,7 +297,7 @@ def main():
                       entities_probs=article_entity_probs,
                       article_entities=article_entities)
 
-            relations = article_tree.get_relations_name(threshold_probability=0.52)
+            relations = article_tree.get_relations_name(threshold_probability=0.4)
             print('relations: ', relations)
             plot_trees(relations)
             gedcom = convert_to_gedcom(relations)
@@ -308,7 +310,7 @@ def main():
 
         elif "--generate" in current_input:
             random_article_tree = random_article()
-            relations = random_article_tree.get_relations_name(threshold_probability=0.4)
+            relations = random_article_tree.get_relations_name(threshold_probability=0.2)
             plot_trees(relations)
 
             gedcom = convert_to_gedcom(relations)
