@@ -31,10 +31,6 @@ class ArticleProcessor:
         else:
             self.article = article
 
-
-    def __init__(self, article, entity1, entity2):
-        print("start9")
-        self.article = wiki_referencer.get_article_tags(article)
         #get all entities and variations for NER as part of feature extraction
         self.entity1 = "@"+str(entity1)+"@"
         self.entity2 = "@" + str(entity2) + "@"
