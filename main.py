@@ -289,23 +289,25 @@ def main():
 
             article_entity_probs = predict_relations_text(n)
             article_entities = list(set([x[0][0] for x in article_entity_probs] + [x[0][1] for x in article_entity_probs]))
-            print(article_entities)
+            print('entities: ', article_entities)
 
-            #print('article_ents: ', article_entities)
-            article_tree =  ArticleTree(article_id=None,
-                      wiki_referencer=wiki_referencer,
-                      entities_probs=article_entity_probs,
-                      article_entities=article_entities)
+            if len(article_entities) < 1:
+                print('Could not find any entities. Could you provide a larger text? ')
+            else:
+                article_tree =  ArticleTree(article_id=None,
+                          wiki_referencer=wiki_referencer,
+                          entities_probs=article_entity_probs,
+                          article_entities=article_entities)
 
-            relations = article_tree.get_relations_name(threshold_probability=0.4)
-            print('relations: ', relations)
-            plot_trees(relations)
-            gedcom = convert_to_gedcom(relations)
-            print()
-            print(gedcom)
-            with open(PROJECT_ROOT + '/gedcom.ged', 'w') as a:
-                a.write(gedcom)
-            print('Saved gedcom file to: ', PROJECT_ROOT + '/gedcom.ged')
+                relations = article_tree.get_relations_name(threshold_probability=0.4)
+                print('relations: ', relations)
+                plot_trees(relations)
+                gedcom = convert_to_gedcom(relations)
+                print()
+                print(gedcom)
+                with open(PROJECT_ROOT + '/gedcom.ged', 'w') as a:
+                    a.write(gedcom)
+                print('Saved gedcom file to: ', PROJECT_ROOT + '/gedcom.ged')
             n = ''
 
         elif "--generate" in current_input:
