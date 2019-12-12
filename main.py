@@ -177,7 +177,6 @@ class ArticleTree:
                     self.family_tree[comb[1]]['has_parent'] = True
                     return True
             return False
-        # TODO: Fix this part!!!! 
                 
     def add_relation(self, comb, relation):
         return self.relation_maps[relation](comb)
@@ -299,7 +298,7 @@ def main():
                           entities_probs=article_entity_probs,
                           article_entities=article_entities)
 
-                relations = article_tree.get_relations_name(threshold_probability=0.6)
+                relations = article_tree.get_relations_name(threshold_probability=0.52)
                 print('relations: ', relations)
                 plot_trees(relations)
                 gedcom = convert_to_gedcom(relations)
@@ -312,7 +311,7 @@ def main():
 
         elif "--generate" in current_input:
             random_article_tree = random_article()
-            relations = random_article_tree.get_relations_name(threshold_probability=0.6)
+            relations = random_article_tree.get_relations_name(threshold_probability=0.52)
             plot_trees(relations)
 
             gedcom = convert_to_gedcom(relations)
@@ -328,5 +327,4 @@ def main():
 
 
 if __name__ == '__main__':
-    #TODO: print found this number of entities. do you want relations?
     main()

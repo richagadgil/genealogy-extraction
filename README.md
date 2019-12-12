@@ -60,3 +60,8 @@ There are two options when running our `main.py` script:
 
 After the features are calculated, a family tree will pop up. Once you close it, 
 the gedcom file will be saved as `gedcom.ged` in this directory.
+
+In order to exit the program, type:
+```
+--exit
+```

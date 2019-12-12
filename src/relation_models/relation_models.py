@@ -6,10 +6,8 @@ import pandas as pd
 from src.article_processor.article_processor import ArticleProcessor
 import nltk
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import svm
-from sklearn.linear_model import LogisticRegression
 from sklearn.externals import joblib
 import pickle
 from nltk.probability import DictionaryProbDist as D
@@ -251,9 +249,6 @@ class LogisticRelationModel(RelationModel):
 
     def predict_relation_from_ids(self, entity_a_id, entity_b_id, article_id, wiki_fit=True):
         if wiki_fit:
-            print('ea: ', entity_a_id)
-            print('eb: ', entity_b_id)
-            print('ai: ', article_id)
             predict_fts = self.labels[(self.labels['entity_a'] == entity_a_id) &
                                       (self.labels['entity_b'] == entity_b_id) &
                                       (self.labels['article_id'] == article_id)]['train_features']
@@ -268,11 +263,6 @@ class LogisticRelationModel(RelationModel):
 
 
 if __name__ == '__main__':
-    # baseline_model = BaselineRelationModel()
-    # baseline_model.fit_train()
-    # baseline_model.evaluate_test()
-    # baseline_model.predict('Berengar I of Italy')
-
     entity_fts = LogisticRelationModel(num_train=150)
     entity_fts.fit_train()
 
