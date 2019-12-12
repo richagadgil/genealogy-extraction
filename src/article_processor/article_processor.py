@@ -31,8 +31,14 @@ class ArticleProcessor:
         else:
             self.article = article
 
+
+    def __init__(self, article, entity1, entity2):
+        print("start9")
+        self.article = wiki_referencer.get_article_tags(article)
+        #get all entities and variations for NER as part of feature extraction
         self.entity1 = "@"+str(entity1)+"@"
         self.entity2 = "@" + str(entity2) + "@"
+
 
         self.features = {}
 
@@ -42,7 +48,7 @@ class ArticleProcessor:
         self.relationships["mother"] = ["mother"]
         self.relationships["father"] = ["father"]
         self.relationships["sibling"] = ["brother", "sister", "sibling"]
-        self.relationships["spouse"] = ["husband", "wife"]
+        self.relationships["spouse"] = ["husband", "wife", "married", "remarried"]
         self.relationship_words = ["son", "daughter", "mother", "father", "brother", "sister", "sibling", "husband",
                                    "wife", "married"]
 
@@ -68,6 +74,7 @@ class ArticleProcessor:
             place = 0
             p_ents = {}
             text = nlp(paragraphs[p])
+
             sentences = list(text.sents)
 
             regex = re.compile('@(\w+)@')
@@ -110,6 +117,7 @@ class ArticleProcessor:
                     else:
                         text_in_between = nlp(text.text[e2_first:e1_first])
 
+                    #text_in_between = nlp([token.text for token in text_in_between if not token.is_stop].text)
 
                     self.features['first_occurence_words_in_between'] = len(text_in_between)
                     if(len(list(text_in_between.sents)) == 1):
