@@ -14,7 +14,7 @@ nlp = spacy.load('en')
 
 
 model = LogisticRelationModel()
-model.persist('log_01')
+model.persist('logistic_cv')
 wiki_referencer = WikiReferencer()
 
 
@@ -312,7 +312,7 @@ def main():
 
         elif "--generate" in current_input:
             random_article_tree = random_article()
-            relations = random_article_tree.get_relations_name(threshold_probability=0.2)
+            relations = random_article_tree.get_relations_name(threshold_probability=0.4)
             plot_trees(relations)
 
             gedcom = convert_to_gedcom(relations)

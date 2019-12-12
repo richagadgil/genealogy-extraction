@@ -167,7 +167,7 @@ class ScikitEntityFeatureRelationModel(RelationModel):
     def __init__(self, num_train=100, num_test=20):
         super().__init__()
         # randomly sample number of relations to train and test on.
-        self.labels = self.train_labels.sample(num_train, random_state=13).dropna()
+        self.labels = self.train_labels
         self.train_labels, self.test_labels = self.train_test_split(self.labels)
         self.i = 0
         self.vec1 = DictVectorizer(sparse=False)
@@ -227,7 +227,7 @@ class LogisticRelationModel(RelationModel):
     def __init__(self, num_train=100, num_test=20):
         super().__init__()
         # randomly sample number of relations to train and test on.
-        self.labels = self.train_labels.sample(num_train, random_state=13).dropna()
+        self.labels = self.train_labels
         self.train_labels, self.test_labels = self.train_test_split(self.labels)
 
     def train_test_split(self, labels):
@@ -251,8 +251,15 @@ class LogisticRelationModel(RelationModel):
 
     def predict_relation_from_ids(self, entity_a_id, entity_b_id, article_id, wiki_fit=True):
         if wiki_fit:
-            predict_fts = self.fit_article(article_id, entity_a_id, entity_b_id)
-            #probs = self.classifier.prob_classify(predict_fts)
+            print('ea: ', entity_a_id)
+            print('eb: ', entity_b_id)
+            print('ai: ', article_id)
+            predict_fts = self.labels[(self.labels['entity_a'] == entity_a_id) &
+                                      (self.labels['entity_b'] == entity_b_id) &
+                                      (self.labels['article_id'] == article_id)]['train_features']
+            if len(predict_fts) < 1:
+                predict_fts = {}
+
         else:
             predict_fts = self.fit_article(article_id, entity_a_id, entity_b_id, wiki_fit=False)
         results = self.classifier.predict_proba(predict_fts)[0]
