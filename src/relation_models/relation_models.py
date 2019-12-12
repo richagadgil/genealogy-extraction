@@ -10,6 +10,7 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import svm
 from sklearn.linear_model import LogisticRegression
+from sklearn.externals import joblib
 import pickle
 from nltk.probability import DictionaryProbDist as D
 
@@ -31,11 +32,8 @@ def save_model(model, model_name):
 
 
 def load_model(model_name):
-    train_path = PROJECT_ROOT + '/data/models/' + model_name + '.pkl'
-    f = open(train_path, 'rb')
-    model = pickle.load(f)
-    f.close()
-    return model
+    train_path = PROJECT_ROOT + '/data/models/' + model_name + '.joblib'
+    return joblib.load(train_path)
 
 class RelationModel:
     def __init__(self, train_labels=train_labels,
@@ -231,8 +229,6 @@ class LogisticRelationModel(RelationModel):
         # randomly sample number of relations to train and test on.
         self.labels = self.train_labels.sample(num_train, random_state=13).dropna()
         self.train_labels, self.test_labels = self.train_test_split(self.labels)
-        self.i = 0
-        self.vec1 = DictVectorizer(sparse=False)
 
     def train_test_split(self, labels):
         X = labels[['entity_a', 'entity_b', 'article_id']].values
@@ -250,23 +246,7 @@ class LogisticRelationModel(RelationModel):
     def fit_article(self, article_id, entity_1, entity_2, wiki_fit=True):
         return ArticleProcessor(article_id, entity_1, entity_2, load_wiki=wiki_fit).features
 
-    def fit_train(self):
-        self.train_fts = self.train_labels.apply(lambda x: self.fit_article(x.article_id, x.entity_a, x.entity_b), axis=1)
-        X_train = self.vec1.fit_transform(self.train_fts)
-        self.classifier = LogisticRegression()
-        self.classifier.fit(X_train, self.train_labels['relation'])
-        self.test_fts = self.test_labels.apply(lambda x: self.fit_article(x.article_id, x.entity_a, x.entity_b), axis=1)
-        X_test = self.vec1.transform(self.test_fts)
-        test_preds = self.classifier.predict(X_test)
-        accuracy = np.mean(test_preds == self.test_labels['relation'])
-        print('test accuracy: ', accuracy)
-        save_model(self.vec1, 'log_01_transformer')
-        save_model(self.classifier, 'log_01')
-
-        return accuracy
-
     def persist(self, model_name):
-        self.vec1 = load_model(model_name+'_transformer')
         self.classifier = load_model(model_name)
 
     def predict_relation_from_ids(self, entity_a_id, entity_b_id, article_id, wiki_fit=True):
@@ -275,16 +255,9 @@ class LogisticRelationModel(RelationModel):
             #probs = self.classifier.prob_classify(predict_fts)
         else:
             predict_fts = self.fit_article(article_id, entity_a_id, entity_b_id, wiki_fit=False)
-        predict_vec = self.vec1.transform(predict_fts)
-
-        results = self.classifier.predict_proba(predict_vec)[0]
+        results = self.classifier.predict_proba(predict_fts)[0]
         prob_per_class_dictionary = dict(zip(self.classifier.classes_, results))
         return D(prob_per_class_dictionary)
-
-
-
-
-
 
 
 if __name__ == '__main__':
